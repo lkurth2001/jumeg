@@ -25,7 +25,7 @@ class JuMEG_Epocher(JuMEG_Epocher_Events):
 #---
     def apply_events_to_hdf(self, fname,raw=None,condition_list=None,picks=None,**kwargv):
         """
-         find stimulus and/or response events for each condition; save to hdf5 format
+        find stimulus and/or response events for each condition; save to hdf5 format
         """
 
         if kwargv['template_name']:
@@ -71,8 +71,7 @@ class JuMEG_Epocher(JuMEG_Epocher_Events):
 
         if template_name:
            self.template_name = template_name
-
-
+           
        #--- open HDFobj
         HDFobj = self.hdf_obj_open(fname=fname,raw=raw)
         fhdf   = HDFobj.filename
