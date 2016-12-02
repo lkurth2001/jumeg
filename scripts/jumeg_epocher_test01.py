@@ -26,9 +26,9 @@ class JuMEG_EpocherX(JuMEG_Epocher):
     def __init__(self):
 
         super(JuMEG_EpocherX, self).__init__()
-
-        self.fif   = '203867_Chrono01_110615_1516_1_c,rfDC,bcc,nr,ar,m1-raw.fif'
-        self.pfif  ='/home/fboers/MEGBoers/data/exp/Chrono/mne'
+                     
+        self.fif   = '201195_Chrono01_110516_1413_1_c,rfDC,bcc,nr,ar,0-60-raw.fif'
+        self.pfif  ='/home/fboers/MEGBoers/data/exp/Chrono/mne/201195/'
         self.fname = None #self.pfif.'/'.self.fif        
         self.raw   = None
         self.fnout = None
@@ -105,6 +105,10 @@ class JuMEG_EpocherX(JuMEG_Epocher):
    
 def jumeg_epocher_run():
     JEV = JuMEG_EpocherX()
+    JEV.fif   = '201195_Chrono01_110516_1413_1_c,rfDC,bcc,nr,ar,0-60-raw.fif'
+    JEV.pfif  ='/home/fboers/MEGBoers/data/exp/Chrono/mne/201195/'
+    JEV.hdf_postfix= '-bcc,nr,ar,0-60'+ JEV.hdf_postfix
+    
     JEV.run()
 
 
