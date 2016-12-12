@@ -734,7 +734,7 @@ class JuMEG_Epocher_Events(JuMEG_Epocher_HDF):
        #--- find   response type idx
            events_idx = df[ evt['marker_type'] ][ (df['rt_type'] == rt_type_idx) & (df['bads'] != self.idx_bad) ].index
            df['selected'][events_idx] = 1
-        
+           #df.loc['selected',events_idx] = 1
        #--- apply weights to reduce/equalize number of events for all condition
            if hasattr(weights,'min_counts'):
               if weights['min_counts']:
@@ -905,18 +905,22 @@ class JuMEG_Epocher_Events(JuMEG_Epocher_HDF):
         input:
               raw obj
               evt=event dict
+              check for bad epochs due to short baseline onset/offset intervall and drop them
+              
         output:
               baseline corrected epoch data
               !!! exclude trigger channels: stim and resp !!!
               bc correction: true /false
         '''
-       
+           
+        ep_bads    = None
         ep_bc_mean = None
-        bc = False
+        bc         = False
+        
      #--- get epochs no bc correction 
         ep = mne.Epochs(self.raw,evt['events'],evt['event_id'],evt['time']['time_pre'],evt['time']['time_post'],
                         baseline=None,picks=picks,reject=reject,proj=proj,preload=True,verbose=False) # self.verbose)
-       
+            
         if ('bc' in evt.keys() ): 
           if evt['bc']['baseline']:   
              if len( evt['bc']['events'] ): 
@@ -931,22 +935,22 @@ class JuMEG_Epocher_Events(JuMEG_Epocher_HDF):
                 
                 picks_bc = jumeg_base.picks.exclude_trigger(ep)
                 
-                #ep_bc = mne.Epochs(self.raw,evt['bc']['events'],evt['bc']['event_id'],
-                #                   bc_time_pre,bc_time_post,baseline=None,
-                #                   picks=picks,reject=reject,proj=proj,preload=True,verbose=self.verbose)
+               #--- create baseline epochs -> from stimulus baseline
                 ep_bc = mne.Epochs(self.raw,evt['bc']['events'],evt['bc']['event_id'],
                                    bc_time_pre,bc_time_post,baseline=None,
                                    picks=picks_bc,reject=reject,proj=proj,preload=True,verbose=self.verbose)
              
-                ep_bc_mean = np.mean(ep_bc._data, axis = -1)
-                #print picks_bc
-             
-                ep._data[:,picks_bc,:] -= ep_bc_mean[:,:,np.newaxis]
+                
+               #--- check for equal epoch size epoch_baseline vs epoch for np bradcasting
+                ep_goods = np.intersect1d(ep_bc.selection,ep.selection)
                
-               #--- retain bc for stim/response 
-               # picks_stim = jumeg_base.pick_stim_response(ep)
-               # if picks_stim.size:
-               #    ep._data[:,picks_stim,: ] += ep_bc_mean[:,picks_stim,np.newaxis]
+               #--- bad epochs & drop them
+                ep_bads  = np.array( np.where(np.in1d(ep_bc.selection,ep_goods,invert=True)) )
+                if ep_bads:
+                   ep_bc.drop(ep_bads.flatten())
+              #--- calc mean from bc epochs 
+                ep_bc_mean = np.mean(ep_bc._data, axis = -1)
+                ep._data[:,picks_bc,:] -= ep_bc_mean[:,:,np.newaxis]
                 bc = True
  #--- 
         if self.verbose:
@@ -954,9 +958,19 @@ class JuMEG_Epocher_Events(JuMEG_Epocher_HDF):
            print ep
            print"      id: %d  <pre time>: %0.3f <post time>: %0.3f" % (evt['event_id'],evt['time']['time_pre'],evt['time']['time_post'])
            print" --> baseline correction : %r" %(bc)
+         
            if bc:
                 print"     done -> baseline correction"
                 print"     bc id: %d  <pre time>: %0.3f <post time>: %0.3f" % (evt['bc']['event_id'],bc_time_pre,bc_time_post)
+       
+                print"\n --> Epoch selection: "
+                print ep.selection
+                print" --> Baseline epoch selection: "
+                print ep_bc.selection
+                print"\n --> good epochs selected:"
+                print ep_goods
+                print"\n --> bad epochs & drop them:"             
+                print ep_bads
            print"\n"
        
         return ep,bc
