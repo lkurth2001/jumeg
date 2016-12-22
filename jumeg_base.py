@@ -6,7 +6,11 @@ Authors:
          Praveen Sripad  <praveen.sripad@rwth-aachen.de>
 License: BSD 3 clause
 
-last update 23.06.2016 FB
+---> update 23.06.2016 FB
+
+---> update 20.12.2016 FB
+ --> add eeg pick-cls
+ --> eeg BrainVision IO support
 
 '''
 
@@ -156,10 +160,31 @@ class JuMEG_Base_PickChannels(object):
          ''' call with meg=True,ref_meg=False,ecg=True,eog=True,stim=True,exclude=bads'''
          return mne.pick_types(raw.info, meg=True,ref_meg=False,eeg=False,stim=True,eog=True,ecg=True,exclude='bads')
        
+     def ecg(self,raw):
+         ''' meg=False,ref_meg=False,ecg=True,eog=False '''
+         return mne.pick_types(raw.info,meg=False,ref_meg=False,ecg=True,eog=False)
+     def eog(self,raw):
+         ''' meg=False,ref_meg=False,ecg=False,eog=True '''
+         return mne.pick_types(raw.info,meg=False,ref_meg=False,ecg=False,eog=True)
+   
      def ecg_eog(self,raw):
          ''' meg=False,ref_meg=False,ecg=True,eog=True '''
          return mne.pick_types(raw.info,meg=False,ref_meg=False,ecg=True,eog=True)
-        
+
+     def eeg(self,raw):
+         ''' meg=False,ref_meg=False,ecg=False,eog=False '''
+         return mne.pick_types(raw.info,meg=False,ref_meg=False,ecg=False,eog=False,eeg=True)
+     def eeg_nobads(self, raw):
+         ''' meg=False,ref_meg=False,ecg=False,eog=False '''
+         return mne.pick_types(raw.info, meg=False, ref_meg=False, ecg=False, eog=False, eeg=True, exclude='bads')
+
+     def eeg_ecg_eog(self, raw):
+         ''' meg=False,ref_meg=False,ecg=True,eog=True,eeg=True '''
+         return mne.pick_types(raw.info, meg=False, ref_meg=False, ecg=True, eog=True, eeg=True)
+     def eeg_ecg_eog_nobads(self, raw):
+         ''' meg=False,ref_meg=False,ecg=True,eog=True,eeg=True '''
+         return mne.pick_types(raw.info, meg=False, ref_meg=False, ecg=True, eog=True, eeg=True, exclude='bads')
+
      def stim(self,raw):
          ''' call with meg=False,stim=True '''
          return mne.pick_types(raw.info,meg=False,stim=True)
@@ -236,8 +261,10 @@ class JuMEG_Base_IO(JuMEG_Base_Basic,JuMEG_Base_StringHelper):
 
         self.__version__  = 20160623
         self.verbose      = False
+      #--- ToDo --- start implementig BV support may new CLS
+        self.brainvision_response_shift = 256
+        self.brainvision_extention      = '.vhdr'
 
-    
     def update_bad_channels(self,fname,raw=None,bads=None,preload=True,append=False,save=False,interpolate=False):
         """
 
@@ -325,20 +352,26 @@ class JuMEG_Base_IO(JuMEG_Base_Basic,JuMEG_Base_StringHelper):
     def get_raw_obj(self,fname_raw,raw=None,path=None):
         ''' 
            check for filename or raw obj
+           chek for meg or brainvision eeg data *.vhdr
            if filename -> load fif file
            input : filename
                    raw : raw obj 
            return: raw obj,fname from raw obj 
-        '''         
+        '''
+
         if raw is None:
            if fname_raw is None:
               assert"---> ERROR no file foumd!!\n"
            if self.verbose:
               print "<<<< Reading raw data ..."
+           fn = fname_raw
            if path:
-              raw = mne.io.Raw(path+"/"+fname_raw,preload=True)
+              fn = path+"/"+fname_raw
+           if ( fn.endswith(self.brainvision_extention) ):
+               raw = mne.io.read_raw_brainvision(fn,response_trig_shift=self.brainvision_response_shift,preload=True)
+               raw.info['bads'] = []
            else:
-              raw = mne.io.Raw(fname_raw,preload=True)
+               raw = mne.io.Raw(fn,preload=True)
          
         if raw is None:
            assert "---> ERROR in jumeg.jumeg_base.get_raw_obj => could not get raw obj:\n ---> FIF name: " + fname_raw   
@@ -401,7 +434,7 @@ class JuMEG_Base_IO(JuMEG_Base_Basic,JuMEG_Base_StringHelper):
                    if start_path :
                       if os.path.isfile( start_path + "/" + opt[0] ):
                             found_list.append( start_path + "/" + opt[0] )
-                            bads_dict[start_path + "/" + opt[0]]= bads
+                            bads_dict[start_path + "/" + opt[0]]= badself.raw     = Nones
                       else :
                           if os.path.isfile( opt[0] ):
                              found_list.append( opt[0] )
@@ -512,10 +545,126 @@ class JuMEG_Base_IO(JuMEG_Base_Basic,JuMEG_Base_StringHelper):
            fname  = fname.replace(',-','-')
        
         if raw and update_raw_fname:
-           raw.info['filename'] = fname + extention
+            raw.info['filename'] = fname
+            if extention:
+               raw.info['filename'] += extention
+               return fname + extention
+
+        return fname
+
+
+class JuMEG_Base_FIFIO(JuMEG_Base_IO):
+    '''
+       support for good old 4D file structure on harddisk
+       => id scan session run postfix extention
+        0007_ODDBall_190101_1200_1_c,rfDC-raw.fif
+        
+        set parameter:
+        start_path = '.'
+        experiment = 'nn'
+        type       = 'mne' ['mne' or 'eeg'] folder 
+
+        id        = '007'
+        scan      = 'TEST'
+        session   = '130314_1131'
+        run       = '1'
+        postfix   = 'c,rfDC-raw'
+        extention = '.fif'
+
+    '''
+    def __init__ (self):
+        super(JuMEG_Base_FIFIO, self).__init__()
+        self.__version__  = 20160623
+        self.verbose      = False
        
-        return fname + extention 
-       
-#--- 
+        self.start_path = '.'
+        self.experiment = 'nn'
+        self.type       = 'mne'
+
+        self.id        = None
+        self.scan      = None
+        self.session   = None
+        self.run       = '1'
+        self.postfix   = 'c,rfDC-raw'
+        self.extention = '.fif'
+
+    def __ck_pdfs(self):
+        l = []
+        if self.id:
+           l.append(self.id)
+        if self.scan:
+           l.append(self.scan)
+        if self.session:
+           l.append(self.session)     
+        if self.run:
+           l.append(self.run)
+        return l
+
+    def __get_mne_path(self):
+        return self.start_path + os.sep + self.experiment + os.sep + self.type + os.sep
+    type_path = property(__get_mne_path)
+
+    def __get_pfif(self):
+        return os.sep.join( self.__ck_pdfs() )
+        # return self.id + os.sep + self.scan + os.sep + self.session + os.sep + self.run + os.sep
+    pfif = property(__get_pfif)
+  
+    def __get_full_path(self):
+        return self.type_path + os.sep + self.pfif
+    path = property(__get_full_path)
+ 
+    def __get_name(self):
+        l = self.__ck_pdfs()
+        if self.postfix:
+           l.append(self.postfix)
+        if self.extention:
+           return '_'.join(l) + self.extention
+        return '_'.join(l)
+        # return self.id + '_' + self.scan +'_'+ self.session +'_'+ self.run +'_'+ self.postfix + self.extention
+    name = property(__get_name)
+ 
+    def __get_full_name(self):
+        return self.type_path + os.sep + self.pfif  +os.sep + self.name
+    full_name = property(__get_full_name)
+
+
+class JuMEG_Base_BrainVisionIO(JuMEG_Base_FIFIO):
+    '''
+
+    '''
+
+    def __init__(self):
+        super(JuMEG_Base_BrainVisionIO, self).__init__()
+        self.__version__ = 20160623
+        self.verbose = False
+
+        self.start_path = '.'
+        self.experiment = 'nn'
+        self.type = 'eeg'
+
+        self.id = None
+        self.scan = None
+        self.session = None
+        self.run = '1'
+        self.postfix = None
+        self.extention = '.vhdr'
+
+    def __get_mne_path(self):
+        return self.start_path + os.sep + self.experiment + os.sep + self.type + os.sep
+
+    type_path = property(__get_mne_path)
+
+    def __get_full_path(self):
+        return self.type_path + os.sep + self.scan + os.sep
+
+    path = property(__get_full_path)
+
+    def __get_full_name(self):
+        return self.path + self.name
+
+    full_name = property(__get_full_name)
+
+
+#---
 jumeg_base       = JuMEG_Base_IO()
 jumeg_base_basic = JuMEG_Base_Basic()
