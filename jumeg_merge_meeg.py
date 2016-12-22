@@ -13,7 +13,7 @@ License: BSD 3 clause
 merge ECG,EGO signals form BrainVision system into MEG-fif file
 -> read meg raw fif
 -> read bv eeg
--> find start events in raw and bv
+-> find start events in raw and bv-eeg
 -> lp-filter eeg and meg data
 -> downsample eeg merge into meg-fif
 -> adjust meg data size
@@ -23,12 +23,12 @@ example via obj:
 from jumeg_merge_meeg import JuMEG_MergeMEEG
 JMEEG = JuMEG_MergeMEEG()
 JMEEG.meg_fname= my_meg_fname.fif
-JMEEG.eeg_fname= my_eeg_fname.vdr
+JMEEG.eeg_fname= my_eeg_fname.vhdr
 JMEEG.run()
 
 example  via function call
 import jumeg_merge_meeg
-jumeg_merge_meeg(.meg_fname= my_meg_fname.fif,eeg_fname= my_eeg_fname.vdr)
+jumeg_merge_meeg(.meg_fname= my_meg_fname.fif,eeg_fname= my_eeg_fname.vhdr)
 
 ---> update 22.12.2016 FB
 
