@@ -82,7 +82,7 @@ class JuMEG_Epocher_Events(JuMEG_Epocher_HDF):
              raw obj,
              e.g. parameters:
               {'event_id': 40, 'and_mask': 255,
-               'events': {'consecutive': True, 'output':'steps','stim_channel': 'STI 014',
+               'events': {'consecutive': True, 'output':'step','stim_channel': 'STI 014',
                'min_duration':0.002,'shortest_event': 2,'mask': 0}
               }
 
