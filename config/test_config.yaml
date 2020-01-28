@@ -1,0 +1,189 @@
+# INTEXT config file for the jumeg preproc pipeline
+
+#--- auto generated or by experts
+info:
+    time: "2019-08-07 00:00:00"
+    user: "fboers"
+    version: "2019-08-07-0.001"
+
+#--- global settings
+global:
+    experiment: "INTEXT"
+    subjects: None
+    stage:  "${JUMEG_TEST_DATA}/mne" #/media/fboers/USB_2TB/exp/INTEXT/mne"
+    #$JUMEG_PATH_MNE_IMPORT1/INTEXT/mne"
+    file_extention: ["meeg-raw.fif","rfDC-empty.fif"]
+    recursive: True
+    wx_keys: ["info","global","noise_reducer","suggest_bads","interpolate_bads","ica"]
+    sorted_keys: ["experiment","subjects","stage","file_extention","recursive"]
+
+###############################################################################
+# pre-processing settings
+###############################################################################
+
+#--- noise reducer fb
+noise_reducer:
+    # low pass filter for reference channels, default 5.0 Hz
+    reflp: 5.
+    # high pass filter for reference channels, default 0.1 Hz
+    refhp: 0.1
+    # Names of the reference channels for high pass filter
+    noiseref_hp: ['RFG ...']
+    # frequencies for notch filter (for power line noise, projector, etc.)
+    refnotch: [50., 100., 150., 200., 250., 300., 350., 400.]
+   #--- file postfix
+    postfix: "nr"
+    plot: True
+    plot_dir: 'plots'
+    plot_show : False
+    save: False
+    run:  False
+    fmax: 300.
+    overwrite: False
+    file_extention: ["meeg-raw.fif","rfDC-empty.fif"]
+    sorted_keys: ["run","save","overwrite","plot","plot_show","plot_dir","fmax","reflp","refhp","noiseref_hp","refnotch","postfix","file_extention"]
+
+#--- suggest bads
+suggest_bads:
+    postfix: "bcc"
+    save: True
+    run:  False
+    plot_show : False
+    overwrite: False
+    file_extention: [",nr-raw.fif","rfDC,nr-empty.fif"]
+    hdfname: "intext_badchannel_info.hdf"
+    sorted_keys: ["run","save","overwrite","postfix","plot_show","file_extention","hdfname","parameter"]
+
+   #--- suggest bads special parameter
+    parameter:
+       sensitivity_steps: 97.
+       sensitivity_psd: 95.
+       fraction: 0.001
+       epoch_length: None
+       summary_plot: False
+       validation: True
+       show_raw: False
+
+#--- interpolate bads
+interpolate_bads:
+    postfix: "int"
+    save: True
+    run: False
+    overwrite: True
+    file_extention: [",nr,bcc-raw.fif","rfDC,nr,bcc-empty.fif"]
+
+    plot_block: False
+
+   # parameter:
+   #    origin: None
+   #    reset_bads: True
+
+#--- ica
+ica:
+    postfix: "ar"
+    save: True
+    run: True
+    do_fit: True
+    do_transform: False
+
+    overwrite: True
+    file_extention: [",nr,bcc,int-raw.fif","rfDC,nr,bcc,int-empty.fif"]
+
+    #-- chop_length
+    chops:
+        length: 120.0
+        epocher:
+                use: False
+                template: "test"
+                condition: "test"
+
+    pre_filter:
+        run: True
+        flow:   0.1
+        fhigh: 45.0
+        save: True
+
+    post_filter:
+        run: True
+        flow:   0.1
+        fhigh: 120.0
+        save: True
+
+    ecg:
+        channel: "ECG"
+      # Lower frequency for the scoring of ECG sources.
+        flow: 8
+      # Higher frequency for the scoring of ECG sources.
+        fhigh: 20
+      # Threshold for independent ecg components.
+      # ToDo ecg method: ctps, ???
+        thresh: 0.3
+      # Use jumeg or mne methods for artifact component identification
+        use_jumeg: True
+
+    eog:
+     # Name of the vertical EOG channel.
+       hor_ch: 'EOG ver'
+     # Name of the horizontal EOG channel.
+       ver_ch: 'EOG hor'
+     # Lower frequency for the scoring of EOG sources.
+       flow: 1
+     # Higher frequency for the scoring of EOG sources.
+       fhigh: 20
+     # Threshold for independent EOG components.
+       thresh: 0.3
+     # Use jumeg or mne methods for artifact component identification
+       use_jumeg: True
+
+  # Seed for pseudo random number generator.
+    random_state: 42
+    exclude: 'bads'
+    reject:
+        'mag': 5.0e-11
+
+#--- ica
+ica_orig:
+    postfix: "ar"
+    save: True
+    run: True
+    overwrite: True
+    file_extention: [",nr,bcc,int-raw.fif","rfDC,nr,bcc,int-empty.fif"]
+
+    # Apply ica only to filtered (False) or to both filtered and
+    # unfiltered data (True)
+    unfiltered: False
+
+    # Chop raw data into smaller segments of length given by chop_length
+    # and apply ica on each segment separately. Concatenate results in the end.
+    chop_length: 60.
+
+    # Name of the ECG channel.
+    ecg_ch: 'ECG'
+    # Name of the horizontal EOG channel.
+    eog_hor_ch: 'EOG ver'
+    # Name of the vertical EOG channel.
+    eog_ver_ch: 'EOG hor'
+
+    # Lower frequency for the scoring of ECG sources.
+    flow_ecg: 8
+    # Higher frequency for the scoring of ECG sources.
+    fhigh_ecg: 20
+    # Lower frequency for the scoring of EOG sources.
+    flow_eog: 1
+    # Higher frequency for the scoring of EOG sources.
+    fhigh_eog: 20
+
+    # Threshold for independent ecg components.
+    # ToDo ecg method: ctps, ???
+    ecg_thresh: 0.3
+    # Threshold for independent EOG components.
+    eog_thresh: 0.3
+    # Use jumeg or mne methods for artifact component identification
+    use_jumeg: True
+    # Seed for pseudo random number generator.
+    random_state: 42
+
+    exclude: 'bads'
+
+    reject:
+        'mag': 5.0e-12

@@ -1,0 +1,119 @@
+info:
+  user: lkurth
+  time: 2020-01-21 14:45
+  version: 3.6.9
+global:
+  experiment: INTEXT
+  file_extention:
+  - meeg-raw.fif
+  - rfDC-empty.fif
+  recursive: true
+  stage: ${JUMEG_TEST_DATA}/mne
+  subjects: None
+noise_reducer:
+  file_extention:
+  - meeg-raw.fif
+  - rfDC-empty.fif
+  fmax: 300.0
+  noiseref_hp:
+  - RFG ...
+  overwrite: false
+  plot: true
+  plot_dir: plots
+  plot_show: false
+  postfix: nr
+  refhp: 0.1
+  reflp: 5.0
+  refnotch:
+  - '50.0'
+  - '100.0'
+  - '150.0'
+  - '200.0'
+  - '250.0'
+  - '300.0'
+  - '350.0'
+  - '400.0'
+  run: false
+  save: false
+suggest_bads:
+  file_extention:
+  - ''
+  - nr-raw.fif
+  - rfDC
+  - nr-empty.fif
+  hdfname: intext_badchannel_info.hdf
+  overwrite: false
+  parameter:
+    epoch_length: None
+    fraction: 0.0
+    sensitivity_psd: 95.0
+    sensitivity_steps: 97.0
+    show_raw: false
+    summary_plot: false
+    validation: true
+  plot_show: false
+  postfix: bcc
+  run: false
+  save: true
+interpolate_bads:
+  file_extention:
+  - ''
+  - nr
+  - bcc-raw.fif
+  - rfDC
+  - nr
+  - bcc-empty.fif
+  overwrite: true
+  plot_block: false
+  postfix: int
+  run: false
+  save: true
+ica:
+  chops:
+    epocher:
+      condition: test
+      template: test
+      use: false
+    length: 120.0
+  do_fit: true
+  do_transform: false
+  ecg:
+    channel: ECG
+    fhigh: 20
+    flow: 8
+    thresh: 0.3
+    use_jumeg: true
+  eog:
+    fhigh: 20
+    flow: 1
+    hor_ch: EOG ver
+    thresh: 0.3
+    use_jumeg: true
+    ver_ch: EOG hor
+  exclude: bads
+  file_extention:
+  - ''
+  - nr
+  - bcc
+  - int-raw.fif
+  - rfDC
+  - nr
+  - bcc
+  - int-empty.fif
+  overwrite: true
+  post_filter:
+    fhigh: 120.0
+    flow: 0.1
+    run: true
+    save: true
+  postfix: ar
+  pre_filter:
+    fhigh: 45.0
+    flow: 0.1
+    run: true
+    save: true
+  random_state: 42
+  reject:
+    mag: 0.0
+  run: true
+  save: true
